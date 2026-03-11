@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Rocket - Pro Shield</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #020205;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', sans-serif;
+            touch-action: none;
+        }
+
+        canvas {
+            background: radial-gradient(circle, #0a0a20 0%, #050510 100%);
+            display: block;
+            z-index: 1;
+        }
+
+        #ui {
+            position: absolute;
+            top: 20px;
+            width: 100%;
+            text-align: center;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .score-val {
+            font-size: 32px;
+            color: #00ff00;
+            font-weight: bold;
+            text-shadow: 0 0 15px #00ff00;
+        }
+
+        .coins-display {
+            font-size: 20px;
+            color: #ffd700;
+            font-weight: bold;
+            text-shadow: 0 0 10px #ffd700;
+            margin-top: 5px;
+        }
+
+        .best-val {
+            font-size: 14px;
+            color: #00ccff;
+            text-shadow: 0 0 10px #00ccff;
+            display: block;
+            margin-top: 5px;
+            text-transform: uppercase;
+        }
+
+        #menu {
+            position: absolute;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            gap: 20px;
+        }
+
+        #startBtn, #storeBtn {
+            padding: 15px 50px;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            border-radius: 50px;
+            color: #000;
+            transition: 0.3s;
+            text-transform: uppercase;
+            width: 260px;
+        }
+
+        #startBtn {
+            background: #00ff00;
+            box-shadow: 0 0 40px rgba(0, 255, 0, 0.6);
+        }
+
+        #storeBtn {
+            background: #ffd700;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+        }
+
+        #storeWindow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 5, 16, 0.95);
+            z-index: 200;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #closeStore {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 45px;
+            color: #ff00ff;
+            cursor: pointer;
+        }
+
+        .store-item {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid #00ccff;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .buy-btn {
+            background: #00ff00;
+            border: none;
+            padding: 10px 30px;
+            border-radius: 10px;
+            font-weight: bold;
+            margin-top: 15px;
+            cursor: pointer;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 30px;
+            left: 0;
+            right: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 25px;
+            box-sizing: border-box;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .btn {
+            width: 85px;
+            height: 85px;
+            background: rgba(0, 255, 0, 0.1);
+            border: 2px solid #00ff00;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #00ff00;
+            font-size: 32px;
+            pointer-events: auto;
+            backdrop-filter: blur(5px);
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #shieldBtn {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 60px;
+            background: #00ccff;
+            border: 3px solid #fff;
+            border-radius: 15px;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            font-weight: bold;
+            z-index: 30;
+            pointer-events: auto;
+            box-shadow: 0 0 25px #00ccff;
+            text-transform: uppercase;
+            animation: pulse 1.5s infinite;
+        }
+
+        #shieldTime {
+            font-size: 24px;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 15px #00ccff;
+            }
+
+            50% {
+                box-shadow: 0 0 35px #00ccff;
+            }
+
+            100% {
+                box-shadow: 0 0 15px #00ccff;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui">
+        <div class="score-val" id="scoreWrap">SCORE: <span id="score">0</span></div>
+        <div class="coins-display" id="coinWrap">COINS: <span id="coinsCount">0</span></div>
+        <div class="best-val">BEST: <span id="best">0</span></div>
+    </div>
+
+    <div id="menu">
+        <button id="startBtn">START MISSION</button>
+        <button id="storeBtn">STORE</button>
+    </div>
+
+    <div id="storeWindow">
+        <div id="closeStore">×</div>
+        <div class="store-item">
+            <h2 style="color:#ffd700">SPACE SHOP</h2>
+            <p>ENERGY SHIELD (15 SEC)</p>
+            <p>PRICE: 20 COINS</p>
+            <button class="buy-btn" id="buyShieldAction">BUY SHIELD</button>
+        </div>
+    </div>
+
+    <div id="shieldBtn">
+        <span id="shieldText">🛡️ SHIELD</span>
+        <span id="shieldTime"></span>
+    </div>
+
+    <div class="controls">
+        <div class="btn" id="leftBtn">A</div>
+        <div class="btn" id="rightBtn">D</div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreElement = document.getElementById("score");
+        const coinsElement = document.getElementById("coinsCount");
+        const bestElement = document.getElementById("best");
+        const startBtn = document.getElementById("startBtn");
+        const storeBtn = document.getElementById("storeBtn");
+        const storeWindow = document.getElementById("storeWindow");
+        const closeStore = document.getElementById("closeStore");
+        const buyShieldAction = document.getElementById("buyShieldAction");
+        const shieldBtn = document.getElementById("shieldBtn");
+        const shieldTimeDisplay = document.getElementById("shieldTime");
+        const shieldText = document.getElementById("shieldText");
+        const menu = document.getElementById("menu");
+        const scoreWrap = document.getElementById("scoreWrap");
+        const coinWrap = document.getElementById("coinWrap");
+
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playExplosionSound() {
+            try {
+                const duration = 0.6; const bufferSize = audioCtx.sampleRate * duration;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0); for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; }
+                const noiseSource = audioCtx.createBufferSource(); noiseSource.buffer = buffer;
+                const filter = audioCtx.createBiquadFilter(); filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(800, audioCtx.currentTime); filter.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + duration);
+                const gainNode = audioCtx.createGain(); gainNode.gain.setValueAtTime(0.6, audioCtx.currentTime); gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                noiseSource.connect(filter); filter.connect(gainNode); gainNode.connect(audioCtx.destination);
+                noiseSource.start();
+            } catch (e) { }
+        }
+
+        function playCoinSound() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = 'triangle'; osc.frequency.setValueAtTime(880, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(1320, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        function resize() { canvas.width = window.innerWidth > 500 ? 420 : window.innerWidth; canvas.height = window.innerHeight; }
+        window.addEventListener('resize', resize); resize();
+
+        let score = 0;
+        let highScore = localStorage.getItem("rocketBestScore") || 0;
+        let totalCoins = parseInt(localStorage.getItem("rocketCoins")) || 0;
+        let hasShield = parseInt(localStorage.getItem("hasShield")) || 0;
+
+        bestElement.innerText = highScore;
+        coinsElement.innerText = totalCoins;
+
+        let gameActive = false, showPlayer = false, shakeAmount = 0, player = { x: 0, y: 0, w: 25, h: 45, vx: 0, accel: 1.3, friction: 0.9 }, enemies = [], stars = [], particles = [], coins = [], keys = {}, moveLeft = false, moveRight = false, flameTime = 0, spawnTimer = 0, difficultyTimer = 0, currentSpawnInterval = 900, minPossibleInterval = 180, lastTime = performance.now();
+        let isShieldActive = false, shieldTimer = 0;
+
+        for (let i = 0; i < 80; i++) { stars.push({ x: Math.random() * 420, y: Math.random() * 1000, size: Math.random() * 2 + 1, speed: Math.random() * 0.8 + 0.3 }); }
+
+        window.addEventListener("keydown", e => keys[e.code] = true); window.addEventListener("keyup", e => keys[e.code] = false);
+
+        function createExplosion(x, y, color) { shakeAmount = 25; playExplosionSound(); for (let i = 0; i < 40; i++) { particles.push({ x: x, y: y, vx: (Math.random() - 0.5) * 18, vy: (Math.random() - 0.5) * 18, life: 1.0, color: color }); } }
+
+        storeBtn.onclick = () => storeWindow.style.display = "flex";
+        closeStore.onclick = () => storeWindow.style.display = "none";
+        buyShieldAction.onclick = () => {
+            if (totalCoins >= 20) {
+                totalCoins -= 20;
+                hasShield = 1;
+                localStorage.setItem("rocketCoins", totalCoins);
+                localStorage.setItem("hasShield", 1);
+                coinsElement.innerText = totalCoins;
+                alert("Shield Purchased!");
+            } else { alert("Not enough coins!"); }
+        };
+
+        shieldBtn.onclick = () => {
+            if (hasShield === 1 && !isShieldActive) {
+                isShieldActive = true;
+                shieldTimer = 15;
+                hasShield = 0;
+                localStorage.setItem("hasShield", 0);
+                shieldText.style.display = "none";
+                shieldTimeDisplay.innerText = shieldTimer;
+
+                let countdown = setInterval(() => {
+                    shieldTimer--;
+                    shieldTimeDisplay.innerText = shieldTimer;
+                    if (shieldTimer <= 0) {
+                        clearInterval(countdown);
+                        isShieldActive = false;
+                        shieldBtn.style.display = "none";
+                        shieldTimeDisplay.innerText = "";
+                        shieldText.style.display = "block";
+                    }
+                }, 1000);
+            }
+        };
+
+        function startGame() {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            score = 0; scoreElement.innerText = score; highScore = localStorage.getItem("rocketBestScore") || 0; bestElement.innerText = highScore; coinsElement.innerText = totalCoins;
+            currentSpawnInterval = 900; spawnTimer = 0; difficultyTimer = 0;
+            player.x = (canvas.width / 2) - (player.w / 2); player.y = canvas.height * 0.75; player.vx = 0;
+            enemies = []; particles = []; coins = []; gameActive = true; showPlayer = true; menu.style.display = "none";
+            isShieldActive = false; shieldTimer = 0; shieldTimeDisplay.innerText = ""; shieldText.style.display = "block";
+            if (hasShield === 1) shieldBtn.style.display = "flex";
+        }
+        startBtn.onclick = startGame;
+
+        const setupBtn = (id, type) => {
+            const btn = document.getElementById(id);
+            const start = (e) => {
+                e.preventDefault();
+                if (type === 'l') moveLeft = true; else moveRight = true;
+            };
+            const stop = (e) => {
+                e.preventDefault();
+                if (type === 'l') moveLeft = false; else moveRight = false;
+            };
+            btn.addEventListener('touchstart', start);
+            btn.addEventListener('touchend', stop);
+            btn.addEventListener('touchcancel', stop);
+            btn.addEventListener('mousedown', start);
+            btn.addEventListener('mouseup', stop);
+            btn.addEventListener('mouseleave', stop);
+        };
+        setupBtn('leftBtn', 'l'); setupBtn('rightBtn', 'r');
+
+        function checkCollision(p, e) {
+            let radius = isShieldActive ? 40 : e.r * 0.8;
+            let cX = Math.max(p.x, Math.min(e.x, p.x + p.w)), cY = Math.max(p.y, Math.min(e.y, p.y + p.h));
+            let dX = e.x - cX, dY = e.y - cY;
+            return (dX * dX + dY * dY) < (radius * radius);
+        }
+
+        // Функция проверки столкновения двух врагов
+        function checkEnemyToEnemy(e1, e2) {
+            let dX = e1.x - e2.x;
+            let dY = e1.y - e2.y;
+            let distance = Math.sqrt(dX * dX + dY * dY);
+            return distance < (e1.r + e2.r);
+        }
+
+        function drawRocket(p) {
+            if (!showPlayer) return; flameTime++; ctx.save(); ctx.translate(p.x + p.w / 2, p.y + p.h / 2); ctx.rotate(p.vx * 0.02);
+            if (isShieldActive) {
+                ctx.beginPath(); ctx.arc(0, 0, 45, 0, Math.PI * 2);
+                ctx.strokeStyle = "#00ccff"; ctx.lineWidth = 3; ctx.stroke();
+                ctx.fillStyle = "rgba(0, 204, 255, 0.2)"; ctx.fill();
+            }
+            ctx.shadowBlur = 20; ctx.shadowColor = "#00ff00"; ctx.fillStyle = "#00ff00"; ctx.beginPath(); ctx.moveTo(0, -p.h / 2); ctx.lineTo(-p.w / 2, p.h / 2); ctx.lineTo(p.w / 2, p.h / 2); ctx.closePath(); ctx.fill();
+            ctx.shadowBlur = 15; ctx.shadowColor = "#ff4400"; ctx.fillStyle = (flameTime % 4 < 2) ? "#ff4400" : "#ffcc00";
+            let fSize = gameActive ? 18 + Math.random() * 12 : 5;
+            ctx.beginPath(); ctx.moveTo(-p.w / 4, p.h / 2); ctx.lineTo(0, p.h / 2 + fSize); ctx.lineTo(p.w / 4, p.h / 2); ctx.closePath(); ctx.fill(); ctx.restore();
+        }
+
+        function gameLoop(timestamp) {
+            let deltaTime = timestamp - lastTime; lastTime = timestamp; ctx.save();
+            if (shakeAmount > 0) { ctx.translate((Math.random() - 0.5) * shakeAmount, (Math.random() - 0.5) * shakeAmount); shakeAmount *= 0.85; }
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            stars.forEach(s => { ctx.strokeStyle = "rgba(255, 255, 255, 0.8)"; ctx.lineWidth = s.size; let speedMult = gameActive ? (4 + score / 60) : 0.8; let lineLen = gameActive ? (s.speed * speedMult * 0.3) : 1; ctx.beginPath(); ctx.moveTo(s.x * (canvas.width / 420), s.y); ctx.lineTo(s.x * (canvas.width / 420), s.y + lineLen); ctx.stroke(); s.y += s.speed * speedMult; if (s.y > canvas.height) { s.y = -20; s.x = Math.random() * 420; } });
+            particles.forEach((p, i) => { ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 4, 4); p.x += p.vx; p.y += p.vy; p.life -= 0.02; if (p.life <= 0) particles.splice(i, 1); });
+            ctx.globalAlpha = 1;
+            if (!gameActive) { drawRocket(player); ctx.restore(); requestAnimationFrame(gameLoop); return; }
+            difficultyTimer += deltaTime; if (difficultyTimer >= 3000) { if (currentSpawnInterval > minPossibleInterval) { currentSpawnInterval -= 50; } difficultyTimer = 0; }
+            spawnTimer += deltaTime;
+            if (spawnTimer >= currentSpawnInterval) {
+                if (Math.random() < 0.2) { coins.push({ x: Math.random() * (canvas.width - 40) + 20, y: -50, r: 10, speed: 4 + (score / 100) }); }
+                let typeRand = Math.random(), enemy = { x: Math.random() * (canvas.width - 60) + 30, y: -50, toRemove: false };
+                if (typeRand > 0.88) { enemy.r = 7; enemy.color = "#ff00ff"; enemy.speed = 11 + (score / 60); enemy.isComet = true; } else if (typeRand < 0.12) { enemy.r = 24; enemy.color = "#ffaa00"; enemy.speed = 3.5 + (score / 120); } else { enemy.r = 13; enemy.color = `hsl(${Math.random() * 360}, 70%, 50%)`; enemy.speed = 5.5 + (score / 100); } enemies.push(enemy); spawnTimer = 0;
+            }
+            if (keys["KeyA"] || keys["ArrowLeft"] || moveLeft) player.vx -= player.accel; else if (keys["KeyD"] || keys["ArrowRight"] || moveRight) player.vx += player.accel; player.vx *= player.friction; player.x += player.vx; if (player.x < 10) { player.x = 10; player.vx *= -0.5; } if (player.x > canvas.width - player.w - 10) { player.x = canvas.width - player.w - 10; player.vx *= -0.5; }
+            drawRocket(player);
+            for (let i = coins.length - 1; i >= 0; i--) {
+                let c = coins[i]; c.y += (4 + score / 60);
+                ctx.save(); ctx.shadowBlur = 20; ctx.shadowColor = "#FFD700"; ctx.fillStyle = "#FFD700";
+                ctx.beginPath(); ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = "#FFF"; ctx.lineWidth = 2; ctx.stroke();
+                ctx.fillStyle = "#B8860B"; ctx.font = "bold 14px Arial"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("$", c.x, c.y); ctx.restore();
+                if (checkCollision(player, c)) { totalCoins++; localStorage.setItem("rocketCoins", totalCoins); coinsElement.innerText = totalCoins; playCoinSound(); coins.splice(i, 1); coinWrap.style.transform = 'scale(1.3)'; setTimeout(() => coinWrap.style.transform = 'scale(1)', 150); } else if (c.y > canvas.height + 50) { coins.splice(i, 1); }
+            }
+
+            // ПРОВЕРКА СТОЛКНОВЕНИЙ МЕТЕОРИТОВ МЕЖДУ СОБОЙ
+            for (let i = 0; i < enemies.length; i++) {
+                for (let j = i + 1; j < enemies.length; j++) {
+                    if (checkEnemyToEnemy(enemies[i], enemies[j])) {
+                        enemies[i].toRemove = true;
+                        enemies[j].toRemove = true;
+                        createExplosion((enemies[i].x + enemies[j].x) / 2, (enemies[i].y + enemies[j].y) / 2, "#ffffff");
+                        score += 2; // Бонус за цепную реакцию
+                    }
+                }
+            }
+
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                let e = enemies[i]; if (e.toRemove) { enemies.splice(i, 1); continue; } e.y += e.speed;
+                ctx.shadowBlur = 15; ctx.shadowColor = e.color; ctx.fillStyle = e.color; ctx.beginPath(); ctx.arc(e.x, e.y, e.r, 0, Math.PI * 2); ctx.fill();
+                if (checkCollision(player, e)) {
+                    if (isShieldActive) { createExplosion(e.x, e.y, e.color); enemies.splice(i, 1); score += 5; }
+                    else { gameActive = false; showPlayer = false; shieldBtn.style.display = "none"; createExplosion(player.x + player.w / 2, player.y + player.h / 2, "#00ff00"); createExplosion(e.x, e.y, e.color); if (score > highScore) { highScore = score; localStorage.setItem("rocketBestScore", highScore); bestElement.innerText = highScore; } setTimeout(() => { alert("MISSION FAILED! SCORE: " + score); menu.style.display = "flex"; }, 100); }
+                }
+                if (e.y > canvas.height + 60) { enemies.splice(i, 1); score++; scoreElement.innerText = score; }
+            }
+            ctx.restore(); requestAnimationFrame(gameLoop);
+        }
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
